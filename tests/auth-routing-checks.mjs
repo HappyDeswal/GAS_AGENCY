@@ -1,0 +1,45 @@
+import assert from 'node:assert/strict';
+import {readFileSync,existsSync} from 'node:fs';
+import {selectLoginMembership,portalForRole} from '../assets/js/portal-access.js';
+const members=[{agency_id:'a',role:'delivery'},{agency_id:'b',role:'owner'},{agency_id:'c',role:'admin'}];
+assert.equal(portalForRole('admin'),'owner');
+assert.equal(portalForRole('untrusted'),null);
+assert.equal(selectLoginMembership(members,'owner','a').agency_id,'b');
+assert.equal(selectLoginMembership(members,'owner','c').agency_id,'c');
+assert.equal(selectLoginMembership(members,'delivery').agency_id,'a');
+assert.equal(selectLoginMembership(members,'','b').agency_id,'b');
+assert.throws(()=>selectLoginMembership([members[0]],'owner'),/does not have access/);
+assert.throws(()=>selectLoginMembership(members,'superuser'),/valid login/);
+assert.throws(()=>selectLoginMembership([]),/No supported/);
+// Exercise the actual connected submit handler for both database roles.
+const memory=new Map();globalThis.sessionStorage={getItem:k=>memory.get(k),setItem:(k,v)=>memory.set(k,v)};
+let submit;const button={disabled:false};const error={textContent:''},notice={textContent:''};
+const form={dataset:{},elements:{username:{value:'member@example.invalid'},password:{value:'fixture'}},reportValidity:()=>true,querySelector:()=>button,addEventListener:(name,handler)=>{if(name==='submit')submit=handler;}};
+globalThis.document={body:{dataset:{}},querySelector:selector=>selector.startsWith('meta')?{}:selector==='#login-form'?form:selector==='.auth-notice'?notice:selector==='#login-error'?error:null};
+globalThis.location={href:'http://localhost/pages/auth/login.html'};
+let role='owner',sent;
+globalThis.fetch=async(path,options)=>({ok:path!=='/api/session',json:async()=>path==='/api/status'?{configured:true}:path==='/api/session'?{error:'Sign in required'}:(sent=JSON.parse(options.body),{portal:role,agencyId:'a'})});
+const {initializeRuntime,configureConnectedAuth}=await import('../assets/js/backend/runtime.js');
+await initializeRuntime('auth');
+await configureConnectedAuth();
+for(const portal of ['owner','delivery']){
+ role=portal;document.body.dataset.loginRole=portal;location.href='http://localhost/pages/auth/'+portal+'-login.html';form.elements.password.value='fixture';
+ await submit({preventDefault(){}});
+ assert.equal(sent.portal,portal);assert.equal(sent.email,'member@example.invalid');
+ assert.equal(location.href,'http://localhost/pages/'+(portal==='owner'?'admin':'delivery')+'/dashboard.html');
+ assert.equal(memory.get('gas-agency-selection'),'a');assert.equal(form.elements.password.value,'');
+}
+const home=readFileSync(new URL('../index.html',import.meta.url),'utf8');
+assert(!home.includes('http-equiv="refresh"'));
+for(const src of home.matchAll(/(?:src|href)="(assets\/[^"#?]+|pages\/[^"#?]+)"/g))assert(existsSync(new URL('../'+src[1],import.meta.url)),src[1]);
+for(const role of ['owner','delivery'])assert(readFileSync(new URL('../pages/auth/'+role+'-login.html',import.meta.url),'utf8').includes('data-login-role="'+role+'"'));
+console.log('PASS: database role selection, wrong portal denial, multi-agency preference, connected owner/delivery form redirects and public homepage assets.');
+const {configureConnectedAuth:configureOffline}=await import('../assets/js/backend/runtime.js?unconfigured-test');
+button.disabled=false;await configureOffline();assert.equal(button.disabled,true);assert.match(notice.textContent,/until Supabase is configured/);
+const {renderAuth}=await import('../assets/js/pages/auth.js');
+document.body={dataset:{loginRole:'owner'},classList:{add(){}},innerHTML:'',insertAdjacentHTML(){}};
+document.querySelector=()=>null;
+renderAuth('login');
+assert(document.body.innerHTML.indexOf('login-options')>document.body.innerHTML.indexOf('</form>'));
+assert(document.body.innerHTML.includes('owner-login.html'));assert(document.body.innerHTML.includes('delivery-login.html'));
+assert(document.body.innerHTML.includes('autocomplete="current-password"'));

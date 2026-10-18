@@ -112,10 +112,15 @@ All operational records have agency IDs; RLS and composite foreign keys enforce 
 
 ## 9. Current implementation and limitations
 
-Implemented sources include all 23 frontend screens, shared components, inventory receipt form, demo storage, Supabase schema/operational migration sources, native server/session API contracts, and provider adapters. This iteration centralizes booking, stock allocation, delivery transitions, collections and adjustments behind a shared operation layer and adds regression coverage.
+Implemented sources include 25 portal/auth screens plus a public agency homepage, shared components, inventory receipt form, demo storage, Supabase schema/operational migration sources, native server/session API contracts, and provider adapters. This iteration centralizes booking, stock allocation, delivery transitions, collections and adjustments behind a shared operation layer and adds regression coverage.
 
 Supabase and messaging accounts are not configured. SQL execution/RLS, real messaging, production hosting and true end-to-end service behavior are not verified. Provider adapters alone do not constitute a secure delivery OTP workflow. Any still-unwired connected path must stay disabled or explicitly documented until its release gates pass; this document is a requirements contract, not a claim that every requirement has shipped.
 
 ## 10. Explicit exclusions and future decisions
 
 No automatic payment gateway transfers, tax-compliance certification, Android app, public self-provisioning of owner roles, purchases/subscriptions, or production deployment without service setup. Decide refund/partial-payment policy, any future exception to mandatory SMS-and-email approval, provider/account ownership, audit retention and production session storage before release.
+
+
+### Agency introduction and role-specific sign-in
+
+The public homepage introduces agency services using local illustrations and CSS 3D animation, with light/dark themes and reduced-motion support. Owner and Delivery login links open separate login URLs; the common login also shows both options beneath its form. Credentials use the Supabase Auth email as the username. Active database membership determines the destination; mismatched portal attempts must be rejected before a session is created. Successful login opens the correct dashboard directly. No post-login role chooser grants access. Unconfigured deployments disable credential sign-in and offer explicitly separate fictional samples. Actual contact details and service areas await owner-provided content.

@@ -3,7 +3,8 @@
   display:grid;
   place-items:center;
   padding:30px 18px;
-  overflow:hidden;
+  overflow-x:hidden;
+  overflow-y:auto;
   position:relative
 }
 
@@ -162,3 +163,5 @@
   left:auto;
   right:-2%
 }
+
+.login-options,.demo-access{display:flex;flex-wrap:wrap;justify-content:center;gap:10px 18px;text-align:center;margin-top:22px;font-size:12px}.login-options>span,.demo-access>small{width:100%;color:var(--muted);font-size:10px}.login-options a{padding:8px 10px;border:1px solid var(--border);border-radius:10px}.login-options [aria-current]{background:var(--surface);color:var(--accent)}.demo-access{border-top:1px solid var(--border);padding-top:18px;font-size:10px}.auth-home{display:block;text-align:center;font-size:11px;margin-top:25px}.auth-shell>.eyebrow{text-align:center;margin-bottom:12px}

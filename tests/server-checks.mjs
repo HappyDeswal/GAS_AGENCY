@@ -2,8 +2,12 @@ import assert from 'node:assert/strict';
 import {once} from 'node:events';
 import {createApplication} from '../server/server.mjs';
 import {createOtpProvider} from '../server/otp-provider.mjs';
-const received=[];
-const transport=async(url,options)=>{received.push({url:String(url),options});const p=new URL(url).pathname;return {ok:true,status:200,text:async()=>JSON.stringify(p.endsWith('/token')?{access_token:'test-access',refresh_token:'test-refresh',expires_in:3600,user:{id:'user-a'}}:p.endsWith('/agency_members')?[{agency_id:'agency-a',role:'owner'}]:{ok:true})};};
+const received=[];let memberRole='owner';
+const transport=async(url,options)=>{
+ received.push({url:String(url),options});const p=new URL(url).pathname;
+ const invalid=p.endsWith('/token')&&JSON.parse(options.body).password==='incorrect';
+ return {ok:!invalid,status:invalid?401:200,text:async()=>JSON.stringify(invalid?{message:'Invalid credentials'}:p.endsWith('/token')?{access_token:'test-access',refresh_token:'test-refresh',expires_in:3600,user:{id:'user-a'}}:p.endsWith('/agency_members')?(memberRole?[{agency_id:'agency-a',role:memberRole}]:[]):{ok:true})};
+};
 const server=createApplication({APP_ORIGIN:'http://localhost',SUPABASE_URL:'https://fixture.supabase.co',SUPABASE_PUBLISHABLE_KEY:'sb_publishable_fixture'},transport);
 server.listen(0,'127.0.0.1');await once(server,'listening');const base=`http://127.0.0.1:${server.address().port}`;
 try{
@@ -11,11 +15,20 @@ try{
  assert.equal((await fetch(base+'/server/.env')).status,404);
  assert((await (await fetch(base+'/pages/auth/login.html')).text()).includes('name="gas-server"'));
  assert.equal((await fetch(base+'/supabase/migrations/202610180001_agency_schema.sql')).status,404);
+ for(const route of ['/', '/pages/auth/owner-login.html','/pages/auth/delivery-login.html'])assert.equal((await fetch(base+route)).status,200);
  assert.equal((await fetch(base+'/api/session')).status,401);
  assert.equal((await post('/api/login',{email:'owner@example.invalid',password:'fixture'},{Origin:'https://wrong.invalid'})).status,403);
+ const invalidLogin=await post('/api/login',{email:'owner@example.invalid',password:'incorrect',portal:'owner'});assert.equal(invalidLogin.status,401);assert.equal(invalidLogin.headers.get('set-cookie'),null);
+ const wrongPortal=await post('/api/login',{email:'owner@example.invalid',password:'fixture',portal:'delivery'});assert.equal(wrongPortal.status,403);assert.equal(wrongPortal.headers.get('set-cookie'),null);
+ memberRole='delivery';
+ const deliveryLogin=await post('/api/login',{email:'partner@example.invalid',password:'fixture',portal:'delivery'});assert.equal(deliveryLogin.status,200);assert.equal((await deliveryLogin.json()).portal,'delivery');
+ assert.equal((await post('/api/login',{email:'partner@example.invalid',password:'fixture',portal:'owner'})).status,403);
+ memberRole='';
+ const inactive=await post('/api/login',{email:'inactive@example.invalid',password:'fixture'});assert.equal(inactive.status,403);assert.equal(inactive.headers.get('set-cookie'),null);
+ memberRole='owner';
  const login=await post('/api/login',{email:'owner@example.invalid',password:'fixture'});assert.equal(login.status,200);
  const cookie=login.headers.get('set-cookie');assert(cookie.includes('HttpOnly'));assert(cookie.includes('SameSite=Strict'));
- const payload=await login.text();assert(!payload.includes('test-access'));assert(!payload.includes('test-refresh'));
+ const payload=await login.text();assert.equal(JSON.parse(payload).portal,'owner');assert.equal(JSON.parse(payload).agencyId,'agency-a');assert(!payload.includes('test-access'));assert(!payload.includes('test-refresh'));
  const headers={Cookie:cookie.split(';')[0]};
  assert.equal((await fetch(base+'/api/session',{headers})).status,200);
  assert.equal((await post('/api/operation',{name:'receive_stock',parameters:{p_agency_id:'other-agency'}},headers)).status,403);

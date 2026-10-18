@@ -5,6 +5,9 @@ All paths are relative to the project root. Start a local HTTP server before ope
 | Portal | Page | URL |
 | --- | --- | --- |
 | Entry | Welcome redirect | `index.html` |
+| Public | Agency homepage | `index.html` |
+| Auth | Owner login | `pages/auth/owner-login.html` |
+| Auth | Delivery login | `pages/auth/delivery-login.html` |
 | Auth | Login | `pages/auth/login.html` |
 | Auth | Select Role | `pages/auth/select-role.html` |
 | Admin | Create Delivery | `pages/admin/create-delivery.html` |

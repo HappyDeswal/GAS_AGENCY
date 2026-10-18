@@ -4,7 +4,7 @@ export const url = path => new URL(path, root).href;
 export const adminPages = [['dashboard', 'Dashboard', 'dashboard'], ['stock', 'Stock management', 'stock'], ['cylinders', 'Cylinders', 'stock'], ['stock-movements', 'Stock movements', 'reports'], ['customers', 'Customers', 'customers'], ['deliveries', 'Deliveries', 'deliveries'], ['payments', 'Payments', 'payments'], ['settlements', 'Settlements', 'payments'], ['staff', 'Staff management', 'customers'], ['reports', 'Reports & analytics', 'reports'], ['receipts', 'Receipts', 'receipt'], ['settings', 'Settings', 'settings']];
 export const deliveryPages = [['dashboard', 'Dashboard', 'dashboard'], ['my-deliveries', 'My deliveries', 'deliveries'], ['history', 'Delivery history', 'calendar'], ['daily-summary', 'Daily summary', 'reports'], ['profile', 'My profile', 'customers']];
 export function brand() {
-    return `<a class="brand" aria-label="GAS AGENCY demo home" href="${url('pages/auth/select-role.html')}"><img src="${url('assets/images/logo.svg')}" alt=""><div><strong>GAS AGENCY</strong><small>OPERATIONS, SIMPLIFIED</small></div></a>`;
+    return `<a class="brand" aria-label="GAS AGENCY home" href="${url('index.html')}"><img src="${url('assets/images/logo.svg')}" alt=""><div><strong>GAS AGENCY</strong><small>OPERATIONS, SIMPLIFIED</small></div></a>`;
 }
 export function layout(title, portal, page, action = '') {
     const nav = portal === 'admin' ? adminPages : deliveryPages;

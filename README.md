@@ -1,6 +1,6 @@
 # GAS AGENCY
 
-A complete, buildless frontend prototype for managing an LPG agency. It has separate Owner/Admin and Delivery Boy portals, 23 HTML screens, light and dark soft-glass themes, and temporary interactive demo records.
+A complete, buildless frontend prototype for managing an LPG agency. It has separate Owner/Admin and Delivery Boy portals, 25 portal/auth HTML screens plus a public agency homepage, light and dark soft-glass themes, and temporary interactive demo records.
 
 **Demo only:** No real authentication, authorization, OTP, payments, messages, database, or production transaction storage is connected. Use fictional information only.
 
@@ -11,7 +11,7 @@ A complete, buildless frontend prototype for managing an LPG agency. It has sepa
 1. Open this **GAS AGENCY** folder in Visual Studio Code.
 2. Install the free **Live Server** extension by Ritwick Dey, if needed.
 3. Right-click `index.html` and choose **Open with Live Server**.
-4. Enter a fictional username, select **Continue to Demo**, and choose a portal. A password is optional and never stored.
+4. Explore the public agency homepage. Choose **Owner login** or **Delivery partner login** for account sign-in. Until Supabase is configured, use the separate fictional demo links beneath the login form; entering credentials does not open a demo.
 
 ### Option B: A simple local HTTP server
 
@@ -56,7 +56,7 @@ The requested Admin headline KPIs are separate illustrative numbers. In particul
 
 ```text
 index.html                     Demo entry point
-pages/auth/                    Login preview and role selector
+pages/auth/                    Common login, owner/delivery login and pre-login chooser
 pages/admin/                   15 admin pages
 pages/delivery/                6 delivery pages
 assets/css/                    Tokens, base, layout, components, animation,
@@ -123,3 +123,10 @@ node tests/workflow-checks.mjs
 node tests/connected-workflow-checks.mjs
 node tests/render-checks.mjs
 ```
+
+
+### Agency homepage and account sign-in
+
+Open `/` for the public agency introduction, illustrated services and CSS 3D animation. The homepage links to `/pages/auth/owner-login.html` and `/pages/auth/delivery-login.html`; `/pages/auth/login.html` remains a common account login with both options underneath. `/pages/auth/select-role.html` is now a pre-login chooser, not a post-login role assignment.
+
+Use the Supabase Auth email as the account username and its password. The server authenticates credentials, reads active `agency_members`, rejects a mismatched portal before creating a session, and returns the verified destination. Owner/admin accounts go directly to the admin dashboard; delivery accounts go to their delivery dashboard. For multiple matching agencies the saved agency is preferred, otherwise the first matching membership is used. The chosen login page cannot grant a database role. Sign-in is disabled when Supabase is not configured; explicit fictional demo links remain available separately. The homepage uses local SVG artwork, supports both themes and respects reduced-motion settings. Agency contact details, service areas and business claims must be supplied before publication; none have been invented.

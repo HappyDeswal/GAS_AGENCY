@@ -18,7 +18,7 @@ Open the APP_ORIGIN configured in the file. The default is port 8082. The server
 ## Implemented API contracts
 
 - `GET /api/status`: reports whether Supabase is configured; OTP is currently false.
-- `POST /api/login`: email/password sign-in through Supabase, requires active agency membership.
+- `POST /api/login`: email/password sign-in through Supabase, requires active agency membership. Optional `portal` (`owner` or `delivery`) restricts eligible memberships; a mismatch is rejected before issuing a cookie. Returns the database-derived `portal` and `agencyId` for direct dashboard navigation.
 - `GET /api/session`: returns user ID and memberships, never access/refresh tokens.
 - `POST /api/logout`: revokes the session and clears the browser cookie.
 - `GET /api/data?agency=<uuid>`: loads authorized tenant records and a business-date anchor; oversized workspaces fail explicitly instead of truncating records.

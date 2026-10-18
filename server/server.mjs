@@ -4,6 +4,7 @@ import {randomBytes} from 'node:crypto';
 import {readFile} from 'node:fs/promises';
 import {fileURLToPath} from 'node:url';
 import path from 'node:path';
+import {selectLoginMembership,portalForRole} from '../assets/js/portal-access.js';
 const root=path.resolve(fileURLToPath(new URL('../',import.meta.url)));
 export function createApplication(env=process.env,transport=fetch){
  const sessions=new Map(); const attempts=new Map();
@@ -31,8 +32,9 @@ export function createApplication(env=process.env,transport=fetch){
     const result=await upstream('/auth/v1/token?grant_type=password',{method:'POST',body:{email:input.email,password:input.password}});
     const members=await upstream(`/rest/v1/agency_members?select=agency_id,role&user_id=eq.${encodeURIComponent(result.user.id)}&active=eq.true`,{token:result.access_token});
     if(!members?.length)return reply(res,403,{error:'No active agency membership. Ask the agency owner to provision your account.'});
+    let selected;try{selected=selectLoginMembership(members,input.portal||'',input.agency||'');}catch(error){return reply(res,403,{error:error.message});}
     const id=randomBytes(32).toString('hex');sessions.set(id,{token:result.access_token,refresh:result.refresh_token,expires:Date.now()+result.expires_in*1000,deadline:Date.now()+28800000,userId:result.user.id,members});
-    return reply(res,200,{userId:result.user.id,members},{'Set-Cookie':cookie(id)});
+    return reply(res,200,{userId:result.user.id,members,agencyId:selected.agency_id,portal:portalForRole(selected.role)},{'Set-Cookie':cookie(id)});
    }
    const s=await session(req);
    if(url.pathname==='/api/session'&&req.method==='GET')return reply(res,200,{userId:s.userId,members:s.members});

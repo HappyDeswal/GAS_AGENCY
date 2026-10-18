@@ -104,6 +104,10 @@ export async function initializeRuntime(portal) {
         location.replace(new URL('../../../pages/delivery/dashboard.html', import.meta.url));
         throw Error('Admin access required.');
     }
+    if (portal === 'delivery' && ['owner', 'admin'].includes(membership?.role)) {
+        location.replace(new URL('../../../pages/admin/dashboard.html', import.meta.url));
+        throw Error('Opening your owner workspace.');
+    }
     const result = await serverRequest('data?agency=' + encodeURIComponent(state.agency));
     const normalized = normalizeWorkspace(result.tables, result.businessDate, state.session.userId);
     replaceWorkspaceData(normalized.snapshot, result.businessDate, normalized.priceMap);
@@ -183,68 +187,43 @@ export async function initializeRuntime(portal) {
     return state;
 }
 export async function configureConnectedAuth() {
-    if (!state.live)
-        return;
     const form = document.querySelector('#login-form');
-    if (form) {
-        form.elements.username.type = 'email';
-        form.elements.username.closest('label').firstChild.textContent = 'Email address';
-        form.elements.password.closest('label').firstChild.textContent = 'Password';
-        form.elements.password.required = true;
-        form.querySelector('button:not([type])').textContent = 'Sign in to agency';
-        document.querySelector('.auth-notice').textContent = 'Agency sign-in · Sessions are managed by the application server.';
-        form.addEventListener('submit', async (event) => {
-            event.stopImmediatePropagation();
-            event.preventDefault();
-            if (!form.reportValidity() || form.dataset.pending)
-                return;
-            form.dataset.pending = 'true';
-            try {
-                await serverRequest('login', {
-                    email: form.elements.username.value.trim(), password: form.elements.password.value
-                });
-                form.elements.password.value = '';
-                location.href = 'select-role.html';
-            }
-            catch (error) {
-                document.querySelector('#login-error').textContent = error.message;
-            }
-            finally {
-                delete form.dataset.pending;
-            }
-        }, {
-            capture: true
-        });
+    if (!form) return;
+    const button = form.querySelector('button[type="submit"]');
+    const notice = document.querySelector('.auth-notice');
+    if (!state.live) {
+        button.disabled = true;
+        notice.textContent = 'Sign-in is unavailable until Supabase is configured on the application server. Sample workspaces below are separate from account sign-in.';
+        form.addEventListener('submit', event => event.preventDefault());
+        return;
     }
-    if (document.body.dataset.page === 'select-role') {
-        if (!state.session) {
-            location.replace('login.html');
-            return;
+    document.querySelector('.demo-access')?.remove();
+    notice.textContent = 'Your database account determines access. Use your registered email as your username.';
+    form.addEventListener('submit', async event => {
+        event.preventDefault();
+        if (!form.reportValidity() || form.dataset.pending) return;
+        form.dataset.pending = 'true';
+        button.disabled = true;
+        document.querySelector('#login-error').textContent = '';
+        try {
+            let agency;
+            try { agency = sessionStorage.getItem('gas-agency-selection'); } catch {}
+            const result = await serverRequest('login', {
+                email: form.elements.username.value.trim(), password: form.elements.password.value,
+                portal: document.body.dataset.loginRole || '', agency
+            });
+            form.elements.password.value = '';
+            if (!['owner', 'delivery'].includes(result.portal) || !result.agencyId)
+                throw Error('Invalid sign-in response. Please try again.');
+            try { sessionStorage.setItem('gas-agency-selection', result.agencyId); } catch {}
+            location.href = new URL('../' + (result.portal === 'owner' ? 'admin' : 'delivery') + '/dashboard.html', location.href).href;
+        } catch (error) {
+            document.querySelector('#login-error').textContent = error.message;
+        } finally {
+            delete form.dataset.pending;
+            button.disabled = false;
         }
-        const admin = ['owner', 'admin'].includes(state.session.members.find(m => m.agency_id === state.agency)?.role);
-        if (state.session.members.length > 1) {
-            const label = document.createElement('label');
-            label.textContent = 'Agency';
-            const select = document.createElement('select');
-            for (const member of state.session.members) {
-                const option = document.createElement('option');
-                option.value = member.agency_id;
-                option.textContent = member.agency?.name || member.agency_id;
-                option.selected = member.agency_id === state.agency;
-                select.append(option);
-            }
-            select.onchange = () => {
-                sessionStorage.setItem('gas-agency-selection', select.value);
-                location.reload();
-            };
-            label.append(select);
-            document.querySelector('.role-shell').prepend(label);
-        }
-        document.querySelectorAll('.role-card').forEach((card, index) => {
-            card.hidden = admin ? index !== 0 : index !== 1;
-        });
-        document.querySelector('.auth-notice').textContent = 'Access is limited to your verified agency role.';
-    }
+    });
 }
 export function initializeConnectedNavigation() {
     if (!state.live)

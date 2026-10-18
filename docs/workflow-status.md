@@ -4,7 +4,7 @@ Product contract: [PRD.md](../PRD.md). This matrix records code and test status,
 
 | Workflow | Implemented in this iteration | Verification / remaining work |
 | --- | --- | --- |
-| Sign-in/session | Connected login handler, role/agency selection, HttpOnly server session, refresh and logout navigation | Mocked server contracts pass; real Auth/password recovery is not verified and recovery UI remains a demo |
+| Sign-in/session | Common and role-specific login, database role redirects, wrong-portal denial, HttpOnly server session, refresh and logout navigation | Mocked server contracts pass; real Auth/password recovery is not verified and recovery UI directs users to their administrator |
 | Customer/staff | Shared operations; connected metadata adapter and admin-scoped API | Mocked routing passes; actual database validation and user provisioning need configured Supabase |
 | Inventory | Receipts, adjustment form/reason, empty-return form, source checks, movement entries; connected operations | Demo tests pass; adjustment SQL migration is prepared, not executed |
 | Booking | Active customer/staff checks, availability, allocation, booking-price snapshot, request key retained on retry | Demo booking/allocation and connected request mapping pass |

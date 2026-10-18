@@ -50,6 +50,6 @@ const project = path.resolve(import.meta.dirname,'..');
 const htmlFiles=[];
 function scan(folder){for(const file of fs.readdirSync(folder,{withFileTypes:true})){const full=path.join(folder,file.name);if(file.isDirectory())scan(full);else if(full.endsWith('.html'))htmlFiles.push(full);}}
 scan(path.join(project,'pages'));
-assert.equal(htmlFiles.length,23);
+assert.equal(htmlFiles.length,25);
 for(const file of htmlFiles){const html=fs.readFileSync(file,'utf8');for(const match of html.matchAll(/(?:href|src)="([^"#]+)"/g)){const link=match[1];if(!/^https?:/.test(link))assert(fs.existsSync(path.resolve(path.dirname(file),link)),file+' broken '+link);}}
-console.log('PASS: 23 page assets; customer/staff references; prices; 12-stop sample day; stock locations; session reset; HTML escaping; CSV quoting and formula protection.');
+console.log('PASS: 25 page assets; customer/staff references; prices; 12-stop sample day; stock locations; session reset; HTML escaping; CSV quoting and formula protection.');
