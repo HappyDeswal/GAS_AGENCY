@@ -15,14 +15,14 @@ Included:
 Use a new, disposable Supabase development project first. These are initial migrations, not an automatic upgrade script for an existing agency database.
 
 1. Create a Supabase development project in your own account.
-2. In its SQL editor, run the first migration, then the second migration. Alternatively, use the Supabase CLI to apply the migration directory.
+2. In its SQL editor, run all migrations in filename order (001 through 004). Alternatively, use the Supabase CLI to apply the migration directory.
 3. Create the first owner in Supabase Auth using the project's trusted dashboard workflow.
 4. Copy `bootstrap-agency.sql.example`, replace `REPLACE_WITH_EXISTING_AUTH_USER_UUID` and the agency name, review the sample cylinder prices, and run it in the trusted SQL editor. Keep the resulting agency UUID.
 5. Provision delivery users through Supabase Auth. A trusted operator adds their `agency_members` row with role `delivery`; an owner/admin then associates their staff record through `staff.auth_user_id`. Browser users cannot insert/update agency membership rows or promote themselves.
 6. Run the pgTAP suite in a **disposable local** database, with the migrations applied and no colliding test fixtures. The script inserts fictional users/tenants inside a rolled-back transaction. With a configured local Supabase CLI environment, `supabase test db` runs tests in this directory.
 7. Review the RLS policies and production requirements before loading any real agency records.
 
-Apply `202610180003_stock_adjustments.sql` after the first two migrations to enable reasoned damage/missing reclassification.
+Migration `202610180003_stock_adjustments.sql` enables reasoned damage/missing reclassification. Migration `202610180004_completion_lock.sql` installs a database trigger that rejects new Delivered records and transitions to Delivered, including direct authenticated RPC calls. Apply it even if the native server already blocks completion. Existing Delivered records remain readable and can receive payments. Replace this lock only when delivery-bound OTP verification is consumed atomically in the completion transaction.
 
 The SQL migrations and pgTAP suite have **not** been executed here: PostgreSQL and the Supabase CLI are not installed, and no hosted project is connected. Do not treat the prepared policies as security-certified or production-validated.
 

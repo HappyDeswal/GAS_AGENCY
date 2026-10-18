@@ -46,3 +46,9 @@ for(const name of ['receive_stock','create_delivery','transition_delivery','retu
     assert(operations.includes('revoke all on function public.'+name));
 }
 console.log('PASS: disabled configuration; auth/secret-key guards; tenant filters; protected write contracts; HTTP error handling; migration contract checks. SQL execution and RLS integration are not tested here.');
+
+const completionLock=readFileSync(new URL('../supabase/migrations/202610180004_completion_lock.sql',import.meta.url),'utf8');
+assert(completionLock.includes('before insert or update on public.deliveries'));
+assert(completionLock.includes("new.status = 'Delivered'"));
+assert(completionLock.includes('old.status is distinct from new.status'));
+assert(completionLock.includes("errcode = '42501'"));

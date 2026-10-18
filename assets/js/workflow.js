@@ -28,6 +28,9 @@ function movement(type, size, qty, date = sampleDate, delivery) {
 export function staffFullStock(size) {
     return data.movements.filter(m => m.size === size).reduce((sum, m) => sum + (['Dispatch'].includes(m.type) ? m.qty : ['Return', 'Delivered'].includes(m.type) ? -m.qty : 0), 0);
 }
+export function availableFullStock(stock) {
+    return (stock.godownFull ?? (stock.full - staffFullStock(stock.size))) - stock.reserve;
+}
 export async function runWorkflow(name, values) {
     if (backend)
         return backend.execute(name, values);
@@ -109,7 +112,7 @@ export async function runWorkflow(name, values) {
             const stock = data.stock.find(s => s.size === values.size);
             if (!stock)
                 throw Error('Choose a cylinder size.');
-            if (stock.full - stock.reserve - staffFullStock(values.size) < qty)
+            if (availableFullStock(stock) < qty)
                 throw Error('Insufficient available godown stock.');
             if (!values.address?.trim() || !values.date)
                 throw Error('Delivery address and date are required.');
@@ -194,7 +197,7 @@ export async function runWorkflow(name, values) {
                 throw Error('Choose damaged or missing.');
             if (!values.reason?.trim() || values.reason.trim().length < 3)
                 throw Error('An adjustment reason is required.');
-            if (stock.full - stock.reserve - staffFullStock(stock.size) < qty)
+            if (availableFullStock(stock) < qty)
                 throw Error('Only available godown full cylinders can be adjusted.');
             stock.full -= qty;
             stock[category] += qty;

@@ -10,7 +10,8 @@ export function deliveryDashboard() {
 }
 export function dailySummary() {
     const list = data.deliveries.filter(d => d.staff === (data.currentStaffId || 'STF-101') && d.date === sampleDate);
-    const records = data.payments.filter(p => p.status === 'Paid' && p.date === sampleDate && list.some(d => d.id === p.delivery));
+    const assigned = data.deliveries.filter(d => d.staff === (data.currentStaffId || 'STF-101'));
+    const records = data.payments.filter(p => p.status === 'Paid' && p.date === sampleDate && assigned.some(d => d.id === p.delivery));
     const sum = method => records.filter(p => p.method === method).reduce((s, p) => s + p.amount, 0);
     const submitted = data.settlements.find(s => s.staff === (data.currentStaffId || 'STF-101') && s.date === sampleDate)?.submitted || 0;
     return `<p class="form-note">Daily summary · ${dateLabel(sampleDate)}. UPI is a recorded method only; no money is transferred.</p><div class="metrics">${metric('Assigned', list.length, 'Sample day', 'deliveries')}${metric('Completed', list.filter(d => d.status === 'Delivered').length, 'Sample day', 'check', 'green')}${metric('Failed', list.filter(d => d.status === 'Failed').length, 'Sample day', 'deliveries', 'amber')}${metric('Pending', list.filter(d => ['Assigned', 'Pending', 'In Progress'].includes(d.status)).length, 'Includes deliveries in progress', 'calendar', 'cyan')}</div><div class="metrics">${metric('Cash collected', money(sum('Cash')), 'Paid demo entries', 'payments', 'green')}${metric('UPI collected', money(sum('UPI')), 'Paid demo entries', 'payments', 'cyan')}${metric('Cash submitted', money(submitted), 'From demo settlement review', 'payments')}${metric('Amount to settle', money(Math.max(0, sum('Cash') - submitted)), 'Cash collection less submission', 'payments', 'amber')}</div>`;

@@ -23,7 +23,7 @@ export function normalizeWorkspace(tables, date, userId) {
             const godown = tables.stock_balances.find(s => s.cylinder_type_id === t.id) || {};
             const partners = tables.staff_stock.filter(s => s.cylinder_type_id === t.id);
             return {
-                size: t.name, full: (godown.full_count || 0) + partners.reduce((s, r) => s + r.full_count, 0), empty: (godown.empty_count || 0) + partners.reduce((s, r) => s + r.empty_count, 0), damaged: godown.damaged_count || 0, missing: godown.missing_count || 0, reserve: 0
+                size: t.name, godownFull: godown.full_count || 0, staffFull: partners.reduce((s, r) => s + r.full_count, 0), full: (godown.full_count || 0) + partners.reduce((s, r) => s + r.full_count, 0), empty: (godown.empty_count || 0) + partners.reduce((s, r) => s + r.empty_count, 0), damaged: godown.damaged_count || 0, missing: godown.missing_count || 0, reserve: 0
             };
         }),
         deliveries: tables.deliveries.map(d => ({
@@ -67,12 +67,14 @@ export async function initializeRuntime(portal) {
             credentials: 'same-origin'
         });
         if (!response.ok)
-            return state;
+            throw Error('Status request failed.');
         status = await response.json();
     }
     catch {
-        return state;
+        throw Error('Agency services are unavailable. Please reload to retry. No changes have been saved.');
     }
+    if (typeof status?.configured !== 'boolean')
+        throw Error('Agency status is invalid. Please reload to retry.');
     if (!status.configured)
         return state;
     state = {

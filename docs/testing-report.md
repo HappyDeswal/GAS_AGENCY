@@ -91,3 +91,10 @@ Executed checks:
 - Existing inventory, backend-contract, page/data and server tests pass. New server assertions found and repaired a trailing-slash static-root check that previously rejected application files; login HTML now serves with a native-server marker. Same-origin, secret-file isolation and unauthorized operation/data guards are covered with mocked upstream services.
 
 No real Supabase, SQL migration execution, messaging, or concurrency verification occurred. Browser verification remains unavailable after the earlier browser security-policy rejection; no alternate browser method was used and no new browser/visual/print QA is claimed. Production OTP/database enforcement, recovery and other open gates are listed in the PRD/status matrix.
+
+
+## Review corrections · 18 October 2026
+
+Fixed four findings: direct RPC completion bypass, native-server status outages falling back to demo mode, availability including dispatched cylinders, and partner daily collections omitting payments for older deliveries. Migration 004 installs a database trigger that rejects inserts/transitions to Delivered until delivery-bound verification exists; updates to previously delivered records remain possible for collection. This is a fail-closed lock, not an implementation of OTP delivery.
+
+Executed checks: data, backend, inventory, workflow, connected-workflow, render, review-regressions, and server suites. The connected tests cover HTTP failures, network errors and invalid status responses. Review regressions verify zero availability after full dispatch, authoritative connected location balances, and today's collections/settlement due for prior-date deliveries while excluding other partners and payment dates. All passed. The updated 16-assertion pgTAP suite includes partner/owner direct-RPC denial and inventory rollback checks, but has not been executed because no PostgreSQL/Supabase instance is connected. No browser verification or real SMS/email was performed.

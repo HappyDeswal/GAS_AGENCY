@@ -1,4 +1,4 @@
-import { runWorkflow } from '../workflow.js';
+import { runWorkflow, availableFullStock, staffFullStock } from '../workflow.js';
 import { data, saveDemo, nextId, sampleDate, dateLabel } from '../demo-data.js';
 import { metric, table, badge, esc, dialog, field, select, toast } from '../ui.js';
 import { url } from '../navigation.js';
@@ -8,11 +8,11 @@ export function stockPage(page) {
     if (page === 'stock-movements')
         return `${metrics}${movementTable()}`;
     const rows = data.stock.map(r => ({
-        filter: r.full < 150 ? 'Low stock' : 'Healthy', cells: [esc(r.size), r.full, r.empty, r.damaged, r.missing, r.reserve, r.full - r.reserve, badge(r.full < 150 ? 'Low stock' : 'Healthy')]
+        filter: availableFullStock(r) < 150 ? 'Low stock' : 'Healthy', cells: [esc(r.size), r.full, r.empty, r.damaged, r.missing, r.reserve, availableFullStock(r), badge(availableFullStock(r) < 150 ? 'Low stock' : 'Healthy')]
     }));
-    return `${metrics}<div class="panel-heading"><div><h2>${page === 'cylinders' ? 'Cylinder size breakdown' : 'Inventory by cylinder size'}</h2><p>Reserve units are held in the godown; all remaining full cylinders are available.</p></div><a class="button" href="${url('pages/admin/stock-movements.html')}">Movement history →</a></div>${table('inventory', ['Size', 'Full', 'Empty', 'Damaged', 'Missing', 'Reserved', 'Available', 'Stock health'], rows, {
+    return `${metrics}<div class="panel-heading"><div><h2>${page === 'cylinders' ? 'Cylinder size breakdown' : 'Inventory by cylinder size'}</h2><p>Available cylinders are full godown stock less reserves; dispatched cylinders are excluded.</p></div><a class="button" href="${url('pages/admin/stock-movements.html')}">Movement history →</a></div>${table('inventory', ['Size', 'Full', 'Empty', 'Damaged', 'Missing', 'Reserved', 'Available', 'Stock health'], rows, {
         title: 'inventory', filters: ['Low stock', 'Healthy']
-    })}<div class="grid-two section-gap"><section class="glass panel"><h2>Godown inventory</h2><p>Full cylinders: ${sums[0] - data.movements.filter(m => m.type === 'Dispatch').reduce((s, m) => s + m.qty, 0) + data.movements.filter(m => m.type === 'Delivered').reduce((s, m) => s + m.qty, 0) + data.movements.filter(m => m.type === 'Return').reduce((s, m) => s + m.qty, 0)}</p><p>Demo movements transfer full cylinders between locations, without changing total agency stock.</p></section><section class="glass panel"><h2>Delivery team inventory</h2><p>Full cylinders held: ${data.movements.reduce((s, m) => s + (m.type === 'Dispatch' ? m.qty : ['Return', 'Delivered'].includes(m.type) ? -m.qty : 0), 0)}</p><p class="stock-alert">Reorder alert: full stock under 150 cylinders.</p></section></div>`;
+    })}<div class="grid-two section-gap"><section class="glass panel"><h2>Godown inventory</h2><p>Full cylinders: ${data.stock.reduce((sum, s) => sum + (s.godownFull ?? (s.full - staffFullStock(s.size))), 0)}</p><p>Demo movements transfer full cylinders between locations, without changing total agency stock.</p></section><section class="glass panel"><h2>Delivery team inventory</h2><p>Full cylinders held: ${data.stock.reduce((sum, s) => sum + (s.staffFull ?? staffFullStock(s.size)), 0)}</p><p class="stock-alert">Reorder alert: full stock under 150 cylinders.</p></section></div>`;
 }
 function movementTable() {
     return table('movements', ['Movement ID', 'Date', 'Cylinder type', 'Quantity', 'From', 'To', 'Type', 'Status', 'Action'], data.movements.map(m => ({
