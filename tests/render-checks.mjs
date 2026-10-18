@@ -1,0 +1,8 @@
+import assert from 'node:assert/strict';
+globalThis.document={addEventListener(){},documentElement:{dataset:{theme:'light'}}};globalThis.location={search:''};
+const pages=await Promise.all(['dashboard','stock','customers','deliveries','payments','staff','reports','receipts','settings','delivery-portal'].map(name=>import('../assets/js/pages/'+name+'.js')));
+const [dashboard,stock,customers,deliveries,payments,staff,reports,receipts,settings,partner]=pages;
+const renders=[()=>dashboard.dashboard(),()=>stock.stockPage('stock'),()=>stock.stockPage('cylinders'),()=>stock.stockPage('stock-movements'),()=>customers.customersPage(),()=>customers.customerDetails(),()=>deliveries.deliveriesPage(),()=>deliveries.createDelivery(),()=>deliveries.deliveryDetails('admin'),()=>payments.paymentsPage(),()=>payments.settlementsPage(),()=>staff.staffPage(),()=>reports.reportsPage(),()=>receipts.receiptsPage(),()=>settings.settingsPage(),()=>partner.deliveryDashboard(),()=>deliveries.deliveriesPage('delivery'),()=>deliveries.deliveryDetails('delivery'),()=>deliveries.deliveriesPage('delivery',true),()=>partner.dailySummary(),()=>partner.profilePage()];
+for(const render of renders){const html=render();assert(typeof html==='string'&&html.includes('<'));assert(!html.includes('NaN'),'Invalid numeric output');}
+location.search='?id=unknown';assert(customers.customerDetails().includes('not found'));assert(deliveries.deliveryDetails('admin').includes('not found'));assert(receipts.receiptsPage().includes('unavailable'));
+console.log('PASS: 21 operational page render functions and unknown-record states. These are template checks, not browser/UI verification.');

@@ -1,0 +1,33 @@
+@keyframes enter {
+  from {
+    opacity:0;
+    transform:translate3d(0,9px,0)
+  }
+
+  to {
+    opacity:1;
+    transform:none
+  }
+
+}
+
+@keyframes float {
+  50% {
+    transform:translate3d(15px,-20px,0) rotate(8deg)
+  }
+
+}
+
+@media(prefers-reduced-motion:reduce) {
+  *,*:before,*:after {
+    animation:none!important;
+    transition:none!important;
+    scroll-behavior:auto!important
+  }
+
+}
+
+[data-motion=reduced] *,[data-motion=reduced] *:before {
+  animation:none!important;
+  transition:none!important
+}

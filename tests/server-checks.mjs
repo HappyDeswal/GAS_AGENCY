@@ -1,0 +1,35 @@
+import assert from 'node:assert/strict';
+import {once} from 'node:events';
+import {createApplication} from '../server/server.mjs';
+import {createOtpProvider} from '../server/otp-provider.mjs';
+const received=[];
+const transport=async(url,options)=>{received.push({url:String(url),options});const p=new URL(url).pathname;return {ok:true,status:200,text:async()=>JSON.stringify(p.endsWith('/token')?{access_token:'test-access',refresh_token:'test-refresh',expires_in:3600,user:{id:'user-a'}}:p.endsWith('/agency_members')?[{agency_id:'agency-a',role:'owner'}]:{ok:true})};};
+const server=createApplication({APP_ORIGIN:'http://localhost',SUPABASE_URL:'https://fixture.supabase.co',SUPABASE_PUBLISHABLE_KEY:'sb_publishable_fixture'},transport);
+server.listen(0,'127.0.0.1');await once(server,'listening');const base=`http://127.0.0.1:${server.address().port}`;
+try{
+ const post=(url,payload,headers={})=>fetch(base+url,{method:'POST',headers:{Origin:'http://localhost','Content-Type':'application/json',...headers},body:JSON.stringify(payload)});
+ assert.equal((await fetch(base+'/server/.env')).status,404);
+ assert((await (await fetch(base+'/pages/auth/login.html')).text()).includes('name="gas-server"'));
+ assert.equal((await fetch(base+'/supabase/migrations/202610180001_agency_schema.sql')).status,404);
+ assert.equal((await fetch(base+'/api/session')).status,401);
+ assert.equal((await post('/api/login',{email:'owner@example.invalid',password:'fixture'},{Origin:'https://wrong.invalid'})).status,403);
+ const login=await post('/api/login',{email:'owner@example.invalid',password:'fixture'});assert.equal(login.status,200);
+ const cookie=login.headers.get('set-cookie');assert(cookie.includes('HttpOnly'));assert(cookie.includes('SameSite=Strict'));
+ const payload=await login.text();assert(!payload.includes('test-access'));assert(!payload.includes('test-refresh'));
+ const headers={Cookie:cookie.split(';')[0]};
+ assert.equal((await fetch(base+'/api/session',{headers})).status,200);
+ assert.equal((await post('/api/operation',{name:'receive_stock',parameters:{p_agency_id:'other-agency'}},headers)).status,403);
+ assert.equal((await post('/api/operation',{name:'delete_everything',parameters:{p_agency_id:'agency-a'}},headers)).status,400);
+ assert.equal((await fetch(base+'/api/data?agency=other-agency',{headers})).status,403);
+ assert.equal((await post('/api/metadata',{agency:'agency-a',table:'payments',values:{}},headers)).status,400);
+ assert.equal((await post('/api/operation',{name:'transition_delivery',parameters:{p_agency_id:'agency-a',p_status:'Delivered'}},headers)).status,503);
+ assert.equal((await post('/api/otp/send',{},headers)).status,503);
+ assert.equal((await post('/api/logout',{},headers)).status,200);
+ assert.equal((await fetch(base+'/api/session',{headers})).status,401);
+ await assert.rejects(async()=>createOtpProvider({}).send('sms','+19999999999'),/not configured/);
+ const otp=createOtpProvider({TWILIO_ACCOUNT_SID:'fixture',TWILIO_AUTH_TOKEN:'fixture',TWILIO_VERIFY_SERVICE_SID:'fixture'},async(url,options)=>({ok:true,json:async()=>({sid:'provider-fixture',status:url.endsWith('VerificationCheck')?'approved':'pending'})}));
+ assert.equal((await otp.send('sms','+19999999999')).status,'pending');
+ assert.equal((await otp.send('email','customer@example.invalid')).status,'pending');
+ assert.equal((await otp.check('customer@example.invalid','123456')).status,'approved');
+ console.log('PASS: server session cookies; token isolation; same-origin writes; tenant/operation guards; secret file isolation; logout; OTP fail-closed and mocked SMS/email provider contracts. No real OTP sent.');
+}finally{server.close();await once(server,'close');}

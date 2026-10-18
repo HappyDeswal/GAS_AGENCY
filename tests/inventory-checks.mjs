@@ -1,0 +1,18 @@
+import assert from 'node:assert/strict';
+const memory=new Map();globalThis.sessionStorage={getItem:k=>memory.get(k)||null,setItem:(k,v)=>memory.set(k,v)};
+const button={insertAdjacentHTML(){}};const form={dataset:{},reportValidity:()=>true,querySelectorAll:()=>[]};let closed=false;let values={size:'14.2 kg',qty:'5',date:'2026-10-18'};
+const modal={querySelector:selector=>selector==='form'?form:{},setAttribute(){},showModal(){closed=false;},close(){closed=true;}};
+const notification={classList:{add(){},remove(){}},textContent:''};
+globalThis.window={};globalThis.document={querySelector:selector=>({'#add-stock':button,'#modal':modal,'#toast':notification}[selector]||null),querySelectorAll:()=>[],addEventListener(){},dispatchEvent(){}};
+globalThis.FormData=class{*[Symbol.iterator](){yield*Object.entries(values);}};
+const {data}=await import('../assets/js/demo-data.js');
+const {initializeStock}=await import('../assets/js/pages/stock.js');
+const {stockRows}=await import('../assets/js/pages/dashboard.js');
+let refreshes=0;initializeStock(()=>refreshes++);button.onclick();const initial=data.stock.find(s=>s.size==='14.2 kg').full;
+await form.onsubmit({preventDefault(){},currentTarget:form});
+assert.equal(data.stock.find(s=>s.size==='14.2 kg').full,initial+5);
+assert.equal(data.movements.at(-1).type,'Receive');assert.equal(data.movements.at(-1).from,'Supplier');assert(closed);assert.equal(refreshes,1);
+assert(stockRows().includes('845'));assert(memory.has('gas-agency-demo-v1'));
+button.onclick();values.qty='-2';await form.onsubmit({preventDefault(){},currentTarget:form});assert(!closed);assert.equal(data.stock.find(s=>s.size==='14.2 kg').full,initial+5);assert(notification.textContent.includes('whole number'));
+clearTimeout(window.toastTimer);
+console.log('PASS: stock receipt increases inventory and ledger once, updates overview, persists demo session, and rejects invalid quantities. Browser layout not tested.');

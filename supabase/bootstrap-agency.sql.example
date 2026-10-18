@@ -1,0 +1,17 @@
+-- Run ONLY in a trusted Supabase SQL editor after creating the owner in Auth.
+-- Replace the UUID below. It is a placeholder, not a credential.
+-- This deliberately does not insert fake frontend records into a production database.
+begin;
+do $$
+declare
+  owner_user uuid := 'REPLACE_WITH_EXISTING_AUTH_USER_UUID';
+  new_agency uuid;
+begin
+  if not exists(select 1 from auth.users where id=owner_user) then raise exception 'Create the owner in Supabase Auth first'; end if;
+  insert into public.agencies(name) values('Your agency name') returning id into new_agency;
+  insert into public.agency_members(agency_id,user_id,role) values(new_agency,owner_user,'owner');
+  insert into public.cylinder_types(agency_id,name,weight_kg,price_paise) values
+    (new_agency,'5 kg',5,35000),(new_agency,'14.2 kg',14.2,85000),(new_agency,'19 kg',19,180000);
+  raise notice 'Agency UUID: %',new_agency;
+end $$;
+commit;

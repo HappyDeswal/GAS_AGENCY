@@ -1,0 +1,48 @@
+/* The reference-inspired light theme is the default; saved choices take priority. */
+:root, :root[data-theme="light"] {
+  color-scheme: light;
+  --bg: #d9dfe5;
+  --sidebar: rgba(237, 240, 242, .7);
+  --surface: rgba(255, 255, 255, .34);
+  --surface-solid: #f2f2f4;
+  --border: rgba(255, 255, 255, .72);
+  --text: #19252b;
+  --muted: #56636c;
+  --accent: #706287;
+  --cyan: #477b7d;
+  --green: #347365;
+  --red: #a64155;
+  --yellow: #816332;
+  --shadow: 6px 8px 20px rgba(56, 64, 77, .055), inset 0 1px 1px rgba(255,255,255,.65);
+  --radius: 23px;
+  --page-background: radial-gradient(ellipse at 95% 80%, #dfcbdc 0, transparent 48%), radial-gradient(ellipse at 7% 100%, #d2d7bd 0, transparent 40%), linear-gradient(130deg, #d5dce2, #d5dce6 60%, #d1cedc);
+  --frame: rgba(233, 237, 242, .28);
+  --field: rgba(255,255,255,.59);
+  --hero: linear-gradient(120deg, rgba(247,249,246,.8), rgba(221,226,225,.36) 60%, rgba(212,204,226,.5));
+  --button-primary: #555f58;
+  --on-primary: #fff;
+  --rail: linear-gradient(160deg, rgba(249,252,250,.27), rgba(225,205,224,.25));
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #161c24;
+  --sidebar: rgba(31,39,47,.88);
+  --surface: rgba(55,64,76,.48);
+  --surface-solid: #29313d;
+  --border: rgba(215,224,237,.16);
+  --text: #edf1f3;
+  --muted: #bac4cd;
+  --accent: #c2abd9;
+  --cyan: #9bc6c6;
+  --green: #9bc9b2;
+  --red: #f3a7b6;
+  --yellow: #e0c193;
+  --shadow: 6px 8px 20px rgba(0,0,0,.1), inset 0 1px 1px rgba(255,255,255,.03);
+  --page-background: radial-gradient(ellipse at 95% 80%, #433647 0, transparent 48%), radial-gradient(ellipse at 7% 100%, #36463f 0, transparent 40%), linear-gradient(130deg, #19232c, #242b3a 60%, #2d2737);
+  --frame: rgba(35,43,55,.36);
+  --field: rgba(20,27,36,.45);
+  --hero: linear-gradient(120deg, rgba(71,86,78,.54), rgba(51,62,67,.3) 60%, rgba(81,63,95,.42));
+  --button-primary: #c1cfbd;
+  --on-primary: #1d2923;
+  --rail: linear-gradient(160deg, rgba(70,81,82,.2), rgba(74,54,82,.25));
+}
